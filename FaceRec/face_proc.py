@@ -2,8 +2,8 @@
 
 import dlib  # 人脸识别的库dlib
 import numpy as np
-from utiles import eu_dis
-from FaceInfo import FaceInfo
+from .utiles import eu_dis
+from .FaceInfo import FaceInfo
 
 import cv2
 

@@ -9,8 +9,8 @@ import pickle
 
 import cv2
 
-from face_proc import FaceProc
-from FaceInfo import FaceInfo
+from FaceRec.face_proc import FaceProc
+from FaceRec.FaceInfo import FaceInfo
 
 ROOT_DIR = 'faces'
 
@@ -35,6 +35,7 @@ if __name__ == '__main__':
             except:
                 continue
             # 按照约定的数据结构输入数据
+            print(f'{pic}处理完成')
             db.append(FaceInfo(features, pinfo, [features]))
 
         with open('facedb.db', 'wb') as f:
