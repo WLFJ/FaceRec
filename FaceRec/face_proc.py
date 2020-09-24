@@ -2,17 +2,38 @@
 
 import dlib  # 人脸识别的库dlib
 import numpy as np
+import threading
 from .utiles import eu_dis
 from .FaceInfo import FaceInfo
 
 import cv2
+
+THREADS = 3
+NOT_FOUND = 'Unknown face!'
+
+class RecThread(threading.Thread):
+    def __init__(self, face_list, feature):
+        super(RecThread, self).__init__()
+        self.face_list = face_list
+        self.feature = feature
+
+    def run(self):
+        """
+        在这里找到最小的属性
+        """
+        self.result = min([ (eu_dis(self.feature, p.features), p.pinfo) for p in self.face_list ])
+
+    def get_result(self):
+        try:
+            return self.result
+        except Exception:
+            return (1, NOT_FOUND)
 
 class FaceProc():
     '''
     在有新脸的时候会进行处理, 具体比对数据库
     '''
 
-    NOT_FOUND = 'Unknown face!'
     
     def __init__(self, database):
      
@@ -26,12 +47,28 @@ class FaceProc():
     def FindPInfo(self, feature):
         '''
         在数据库中查找脸, 并将人的信息对象返回
+        现在我们要改成线程方式, 多个线程计算最小值.
+        现在要
         '''
-        for f in self.database:
-            if eu_dis(feature, f.features) == 'same':
-                return f.pinfo
-
-        return self.NOT_FOUND
+        # 这里默认三个线程
+        threads = []
+        # 现在我们要将所有任务分配
+        list_len = len(self.database)
+        # 现在要把最后的也分配
+        thread_seg = list_len // min(THREADS, list_len)
+        print(f'列表长度{list_len}, 线程大小{THREADS}')
+        res_list = []
+        for i in range(0, list_len, thread_seg):
+            t = RecThread(self.database[i : min(i + thread_seg, list_len)], feature)
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+            res_list.append(t.get_result())
+           
+        min_res = min(res_list)
+        if min_res[0] > 0.4: return NOT_FOUND
+        return min(res_list)[1]
 
     def RecFace(self, readFrame):
         '''
