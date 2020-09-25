@@ -15,7 +15,7 @@ from FaceRec.FaceInfo import FaceInfo
 from FaceRec.face_proc import FaceProc
 
 ROOT_DIR = 'faces'
-THREADS = 2
+THREADS = 64
 
 db = []
 
@@ -29,7 +29,11 @@ class RecThread(threading.Thread):
         for pinfo, pic_name in self.task_list:
             print(f'Rec {pinfo}...')
             readImg = cv2.imread(f'{ROOT_DIR}/{pic_name}')
-            features, pos = faceproc.RecFace_grey(readImg)[0]
+            res_l = faceproc.RecFace_grey(readImg)
+            if(len(res_l) <= 0 or len(res_l) >= 2):
+                print(f'图片不合格{len(res_l)} --- {pinfo}')
+                continue
+            features, pos = res_l[0]
             self.result.append(FaceInfo(features, pinfo, [features]))
 
     def get_result(self):
