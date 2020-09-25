@@ -34,8 +34,8 @@ class Runthread(Thread):
 
     def run(self):
         cap = cv2.VideoCapture(0)
-        cap.set(3, 360)
-        cap.set(4, 600)
+        cap.set(3, 640)
+        cap.set(4, 480)
         while cap.isOpened():
             if self.endflag == 1:
                 frame.bmp.SetBitmap(wx.Bitmap(frame.pic_index))
