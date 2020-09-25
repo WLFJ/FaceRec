@@ -125,10 +125,10 @@ if __name__ == '__main__':
     # 打印数据
     act_id = sys.argv[1]
     # 实例化识别引擎
-    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', act_id)
+    fr = FaceRec(manager(), face_database_all, 'localhost:8000', act_id)
     # 回调函数, 在识别成功和识别失败时调用你绑定的函数, 注意参数个数必须相同, 例子如下:
-    def callback_succ(pinfo):
-        print('识别成功!', pinfo)
+    def callback_succ(pinfo, pname):
+        print('识别成功!', pinfo, pname)
     fr.rec_out = callback_succ
     def callback_faild(frame):
         # 识别失败自然不会有pinfo了, 于是会返回当前完整的图片
