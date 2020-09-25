@@ -56,7 +56,6 @@ class FaceProc():
         list_len = len(self.database)
         # 现在要把最后的也分配
         thread_seg = list_len // min(THREADS, list_len)
-        print(f'列表长度{list_len}, 线程大小{THREADS}')
         res_list = []
         for i in range(0, list_len, thread_seg):
             t = RecThread(self.database[i : min(i + thread_seg, list_len)], feature)
