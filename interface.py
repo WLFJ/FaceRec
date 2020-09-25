@@ -16,12 +16,8 @@ from FaceRec.FaceInfo import FaceInfo
 
 import numpy as np
 
-ID_NEW_REGISTER = 160
-ID_FINISH_REGISTER = 161
 ID_START_PUNCHCARD = 190
 ID_END_PUNCARD = 191
-ID_OPEN_LOGCAT = 283
-ID_CLOSE_LOGCAT = 284
 ID_WORKER_UNAVIABLE = -1
 
 class Runthread(Thread):
@@ -38,9 +34,11 @@ class Runthread(Thread):
 
     def run(self):
         cap = cv2.VideoCapture(0)
+        cap.set(3, 360)
+        cap.set(4, 600)
         while cap.isOpened():
-            time.sleep(5)
             if self.endflag == 1:
+                frame.bmp.SetBitmap(wx.Bitmap(frame.pic_index))
                 break
             flag, im_rd = cap.read()
             image1 = cv2.cvtColor(im_rd, cv2.COLOR_BGR2RGB)
@@ -60,7 +58,7 @@ class Interface(wx.Frame):
         resultText = wx.StaticText(parent=self, pos=(10, 20), size=(90, 60))
         resultText.SetBackgroundColour('red')
         self.info = "\r\n"+self.getDateAndTime()+"程序初始化成功\r\n"
-        self.infoText = wx.TextCtrl(parent=self,size=(400, 500),
+        self.infoText = wx.TextCtrl(parent=self, size=(400, 500),
                    style=(wx.TE_MULTILINE|wx.HSCROLL|wx.TE_READONLY))
         self.infoText.SetForegroundColour("ORANGE")
         self.infoText.SetLabel(self.info)
@@ -90,7 +88,6 @@ class Interface(wx.Frame):
             s = pickle.dumps(db)
             f.write(s)
         print("结束签到")
-        self.bmp.SetBitmap(wx.Bitmap(self.pic_index))
         pass
 
     def OnFormClosed(self, event):
@@ -132,14 +129,16 @@ class Interface(wx.Frame):
             print("重复签到")
         else:
             print('识别成功', pinfo)
-            self.infoText.AppendText("学号"+pinfo+"签到成功!\n")
+            # self.infoText.AppendText("学号"+pinfo+"签到成功!\n")
+            wx.CallAfter(pub.sendMessage, 'updateLabel', pinfo=pinfo)
             self.map.append(pinfo)
 
 
+    def succ_update_label_event(self, pinfo):
+        self.infoText.AppendText(f'学号{pinfo}签到成功!\n')
+
     def callback_faild(self, frame):
         print("识别失败")
-
-
 
     def __init__(self):
         self.canclose = 1 #1可关闭 0不可关闭
@@ -152,6 +151,7 @@ class Interface(wx.Frame):
         self.initGallery()
         # self.initData()
         pub.subscribe(self.call_back, "pic")
+        pub.subscribe(self.succ_update_label_event, "updateLabel")
         self.Bind(wx.EVT_CLOSE, self.OnFormClosed, self)
 
 
@@ -163,4 +163,4 @@ if __name__ == '__main__':
     app = wx.App()
     frame = Interface()
     frame.Show()
-    app.MainLoop()
+    app.MainLoop() 
