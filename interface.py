@@ -37,7 +37,7 @@ class Runthread(Thread):
         wx.CallAfter(pub.sendMessage, 'pic', pic=pic)
 
     def run(self):
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        cap = cv2.VideoCapture(0)
         while cap.isOpened():
             time.sleep(5)
             if self.endflag == 1:
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     # 获取界面数据库
     with open('facedb.db', 'rb') as f:
         face_database_all = pickle.loads(f.read())
-    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', 7)
+    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', sys.argv[1])
     app = wx.App()
     frame = Interface()
     frame.Show()
