@@ -30,8 +30,8 @@ fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', act_id)
 
 ```python
 # pinfo 为文本类型, 识别成功的学号
-def callback_succ(pinfo):
-    print('识别成功', pinfo)
+def callback_succ(pinfo, pname):
+    print('识别成功', pinfo, pname)
 
 fr.rec_out = callback_succ
 
