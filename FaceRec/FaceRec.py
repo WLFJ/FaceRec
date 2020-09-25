@@ -22,8 +22,8 @@ class FaceRec():
     def __init__(self, stu_manager, face_database, server, act_id):
         self.stu_manager = stu_manager
         self.face_database_all = face_database
-        self.stu_ids = json.dumps(requests.get(f'http://{server}/checkin/{act_id}').text)
-        self.face_database = [s for s in self.face_database_all if s.pinfo in self.stu_ids]
+        self.stu_infos = json.loads(requests.get(f'http://{server}/checkin/{act_id}').text)
+        self.face_database = [s for s in self.face_database_all if s.pinfo in self.stu_infos.keys()]
         self.face_proc = FaceProc(self.face_database)
         self.act_id = act_id
         self.server = server
@@ -59,7 +59,7 @@ class FaceRec():
             for feature, pos in people_features:
                 pinfo = pinfo_list.pop(0)
                 if pinfo != NOT_FOUND:
-                    threading.Thread(target=self.rec_out, args=(pinfo, )).start()
+                    threading.Thread(target=self.rec_out, args=(pinfo, self.stu_infos[pinfo])).start()
                     threading.Thread(target=self.rec_check_in, args=(pinfo,)).start()
                 else:
                     threading.Thread(target=self.rec_fail, args=(frame, )).start()
