@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 
 from .face_proc import FaceProc
+from .face_proc import NOT_FOUND
 from .FaceInfo import FaceInfo
 from .manager import manager
 
@@ -57,7 +58,7 @@ class FaceRec():
         if len(people_features) != 0:
             for feature, pos in people_features:
                 pinfo = pinfo_list.pop(0)
-                if pinfo != self.face_proc.NOT_FOUND:
+                if pinfo != NOT_FOUND:
                     threading.Thread(target=self.rec_out, args=(pinfo, )).start()
                     threading.Thread(target=self.rec_check_in, args=(pinfo,)).start()
                 else:
