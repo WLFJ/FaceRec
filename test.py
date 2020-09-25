@@ -36,7 +36,7 @@ class Runthread(Thread):
         wx.CallAfter(pub.sendMessage, 'pic', pic=pic)
 
     def run(self):
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        cap = cv2.VideoCapture(0)
         while cap.isOpened():
             flag, im_rd = cap.read()
             image1 = cv2.cvtColor(im_rd, cv2.COLOR_BGR2RGB)
@@ -120,7 +120,11 @@ class Interface(wx.Frame):
             print("重复签到")
         else:
             print('识别成功', pinfo)
-            self.infoText.AppendText("学号"+pinfo+"签到成功!\n")
+            # 应该是这里不能用这种方式, 我们还是注册时间之后传给界面
+            wx.CallAfter(pub.sendMessage, 'updateLabel', pinfo=pinfo)
+
+    def succ_update_label_event(self, pinfo):
+            self.infoText.AppendText(f'学号{pinfo}签到成功!\n')
             self.map.append(pinfo)
 
 
@@ -138,13 +142,14 @@ class Interface(wx.Frame):
         self.initGallery()
         # self.initData()
         pub.subscribe(self.call_back, "pic")
+        pub.subscribe(self.succ_update_label_event, "updateLabel")
 
 
 if __name__ == '__main__':
     # 获取界面数据库
     with open('facedb.db', 'rb') as f:
         face_database_all = pickle.loads(f.read())
-    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', 7)
+    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', 8)
     app = wx.App()
     frame = Interface()
     frame.Show()
