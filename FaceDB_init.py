@@ -13,9 +13,10 @@ import cv2
 
 from FaceRec.FaceInfo import FaceInfo
 from FaceRec.face_proc import FaceProc
+from FaceRec.utiles import eu_dis
 
 ROOT_DIR = 'faces'
-THREADS = 64
+THREADS = 128
 
 db = []
 
@@ -40,6 +41,7 @@ class RecThread(threading.Thread):
         return self.result
 
 if __name__ == '__main__':
+    # 现在我们要改进一下, 可以指定文件名录入指定的人面
     start_time = time.time()
     # 从一开始就计时
     # Bad design
@@ -66,6 +68,16 @@ if __name__ == '__main__':
     for t in threads:
         t.join()
         db.extend(t.get_result())
+
+    # 下面进行相似比对, 防止出现过于相似的人
+    for i, p_a in enumerate(db):
+        print(i)
+        for p_b in db[i+1:]:
+            if p_a == p_b:
+                continue
+            if eu_dis(p_a.features, p_b.features) < 0.35:
+                print(f'{p_a.pinfo}和{p_b.pinfo}过于相似')
+
 
     with open('facedb.db', 'wb') as f:
         s = pickle.dumps(db)
