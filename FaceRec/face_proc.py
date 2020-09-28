@@ -34,15 +34,15 @@ class FaceProc():
     在有新脸的时候会进行处理, 具体比对数据库
     '''
 
-    
+
     def __init__(self, database):
-     
+
         self.detector = dlib.get_frontal_face_detector()
         self.facerec = dlib.face_recognition_model_v1("model/dlib_face_recognition_resnet_model_v1.dat")
         self.predictor = dlib.shape_predictor('model/shape_predictor_68_face_landmarks.dat')
-        
-        self.database = database 
-        
+
+        self.database = database
+
 
     def FindPInfo(self, feature):
         '''
@@ -64,7 +64,7 @@ class FaceProc():
         for t in threads:
             t.join()
             res_list.append(t.get_result())
-           
+
         min_res = min(res_list)
         if min_res[0] > 0.4: return NOT_FOUND
         return min(res_list)[1]
