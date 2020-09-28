@@ -124,11 +124,11 @@ class Interface(wx.Frame):
         self.bmp = wx.StaticBitmap(parent=self, pos=(400, 0), bitmap=wx.Bitmap(self.pic_index))
         pass
 
-    def callback_succ(self, pinfo):
+    def callback_succ(self, pinfo, pname):
         if pinfo in self.map:
             print("重复签到")
         else:
-            print('识别成功', pinfo)
+            print('识别成功', pinfo, pname)
             # self.infoText.AppendText("学号"+pinfo+"签到成功!\n")
             wx.CallAfter(pub.sendMessage, 'updateLabel', pinfo=pinfo)
             self.map.append(pinfo)
