@@ -59,7 +59,8 @@ class FaceRec():
             for feature, pos in people_features:
                 pinfo = pinfo_list.pop(0)
                 if pinfo != NOT_FOUND:
-                    threading.Thread(target=self.rec_out, args=(pinfo, self.stu_infos[pinfo])).start()
+                    # threading.Thread(target=self.rec_out, args=(pinfo, self.stu_infos[pinfo])).start()
+                    self.rec_out(pinfo, self.stu_infos[pinfo])
                     threading.Thread(target=self.rec_check_in, args=(pinfo,)).start()
                 else:
                     threading.Thread(target=self.rec_fail, args=(frame, )).start()
