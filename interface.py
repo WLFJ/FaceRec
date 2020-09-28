@@ -2,6 +2,7 @@ import pickle
 import sys
 import os
 from time import localtime, strftime
+import time
 import wx
 from pubsub import pub
 import cv2
@@ -15,12 +16,8 @@ from FaceRec.FaceInfo import FaceInfo
 
 import numpy as np
 
-ID_NEW_REGISTER = 160
-ID_FINISH_REGISTER = 161
 ID_START_PUNCHCARD = 190
 ID_END_PUNCARD = 191
-ID_OPEN_LOGCAT = 283
-ID_CLOSE_LOGCAT = 284
 ID_WORKER_UNAVIABLE = -1
 
 class Runthread(Thread):
@@ -37,14 +34,19 @@ class Runthread(Thread):
 
     def run(self):
         cap = cv2.VideoCapture(0)
+        cap.set(3, 640)
+        cap.set(4, 480)
         while cap.isOpened():
+            if self.endflag == 1:
+                frame.bmp.SetBitmap(wx.Bitmap(frame.pic_index))
+                break
             flag, im_rd = cap.read()
             image1 = cv2.cvtColor(im_rd, cv2.COLOR_BGR2RGB)
             fr.frame_come(image1, self.update_frame)
-            if self.endflag == 1:
-                break
         cap.release()
         cv2.destroyAllWindows()
+
+
 
 class Interface(wx.Frame):
 
@@ -56,7 +58,7 @@ class Interface(wx.Frame):
         resultText = wx.StaticText(parent=self, pos=(10, 20), size=(90, 60))
         resultText.SetBackgroundColour('red')
         self.info = "\r\n"+self.getDateAndTime()+"程序初始化成功\r\n"
-        self.infoText = wx.TextCtrl(parent=self,size=(400, 500),
+        self.infoText = wx.TextCtrl(parent=self, size=(400, 500),
                    style=(wx.TE_MULTILINE|wx.HSCROLL|wx.TE_READONLY))
         self.infoText.SetForegroundColour("ORANGE")
         self.infoText.SetLabel(self.info)
@@ -69,6 +71,7 @@ class Interface(wx.Frame):
         pass
 
     def OnStartPunchCardClicked(self, event):
+        self.canclose = 0
         self.thread = Runthread()
         self.thread.start()
         pass
@@ -77,6 +80,7 @@ class Interface(wx.Frame):
         self.bmp.SetBitmap(pic)
 
     def OnEndPunchCardClicked(self, event):
+        self.canclose = 1
         print("开始结束签到...")
         self.thread.endflag = 1
         db = fr.close_event()
@@ -84,8 +88,13 @@ class Interface(wx.Frame):
             s = pickle.dumps(db)
             f.write(s)
         print("结束签到")
-        self.bmp.SetBitmap(wx.Bitmap(self.pic_index))
         pass
+
+    def OnFormClosed(self, event):
+        if self.canclose == 1:
+            self.Destroy()
+        else:
+            wx.MessageBox("请在关闭前首先结束签到", "确认", wx.CANCEL | wx.OK | wx.ICON_QUESTION)
 
     def initMenu(self):
         menuBar = wx.MenuBar()
@@ -120,19 +129,19 @@ class Interface(wx.Frame):
             print("重复签到")
         else:
             print('识别成功', pinfo)
-            # 应该是这里不能用这种方式, 我们还是注册时间之后传给界面
+            # self.infoText.AppendText("学号"+pinfo+"签到成功!\n")
             wx.CallAfter(pub.sendMessage, 'updateLabel', pinfo=pinfo)
-
-    def succ_update_label_event(self, pinfo):
-            self.infoText.AppendText(f'学号{pinfo}签到成功!\n')
             self.map.append(pinfo)
 
+
+    def succ_update_label_event(self, pinfo):
+        self.infoText.AppendText(f'学号{pinfo}签到成功!\n')
 
     def callback_faild(self, frame):
         print("识别失败")
 
-
     def __init__(self):
+        self.canclose = 1 #1可关闭 0不可关闭
         self.map = []
         fr.rec_fail = self.callback_faild
         fr.rec_out = self.callback_succ
@@ -143,14 +152,15 @@ class Interface(wx.Frame):
         # self.initData()
         pub.subscribe(self.call_back, "pic")
         pub.subscribe(self.succ_update_label_event, "updateLabel")
+        self.Bind(wx.EVT_CLOSE, self.OnFormClosed, self)
 
 
 if __name__ == '__main__':
     # 获取界面数据库
     with open('facedb.db', 'rb') as f:
         face_database_all = pickle.loads(f.read())
-    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', 8)
+    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', sys.argv[1])
     app = wx.App()
     frame = Interface()
     frame.Show()
-    app.MainLoop()
+    app.MainLoop() 
