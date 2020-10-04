@@ -15,6 +15,7 @@ import cv2
 from FaceRec.FaceRec import FaceRec
 from FaceRec.manager import manager
 from FaceRec.FaceInfo import FaceInfo
+from FaceRec.face_proc import NOT_FOUND
 # 结束
 
 import numpy as np
@@ -125,7 +126,7 @@ if __name__ == '__main__':
     # 打印数据
     act_id = sys.argv[1]
     # 实例化识别引擎
-    fr = FaceRec(manager(), face_database_all, 'localhost:8000', act_id)
+    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', act_id)
     # 回调函数, 在识别成功和识别失败时调用你绑定的函数, 注意参数个数必须相同, 例子如下:
     def callback_succ(pinfo, pname):
         print('识别成功!', pinfo, pname)
@@ -135,6 +136,11 @@ if __name__ == '__main__':
         # (后期会变成单独的人脸照片, 现在因为效率问题没有实现)
         print('识别失败')
     fr.rec_fail = callback_faild
+    def face_choose(l):
+        print('来自face_choose', l)
+        i = input('你是谁? -1代表都不匹配')
+        return NOT_FOUND if i == '-1' else i
+    fr.face_proc.choose_face = face_choose
     # 结束
     app = QApplication(sys.argv)
     win = win()

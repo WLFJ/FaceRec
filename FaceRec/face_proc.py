@@ -80,14 +80,12 @@ class FaceProc():
         # 这里我们要指定是谁! 从而更新人脸
         # 我们还需要添加签到时间戳(当然是运行时, 如果发现有时间间隔很小的, 自然可以将其归为同类)
         # 现在我们还需要过滤是否有record_timestamp属性的, 如果只有一个, 则直接选择了
-        if len_min_res == 1 or ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1 * 1000 * 1000):
-            print('自动选择', min_res[0])
+        if ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1000):
+            print('自动选择', min_res[0], min_res[0][2].record_timestamp)
             return res_list[0][1]
 
-        if min_res[1][0] - min_res[0][0] < 0.1:
-            # 此处还需要优化
-            res = self.choose_face(min_res[:])
-            return NOT_FOUND if res == None else res;
+        res = self.choose_face(min_res[:])
+        return NOT_FOUND if res == None else res;
 
     def RecFace(self, readFrame):
         '''
