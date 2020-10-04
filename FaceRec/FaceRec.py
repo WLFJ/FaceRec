@@ -38,7 +38,6 @@ class FaceRec():
             print('签到失败', res.text)
         else:
             self.stu_manager.record(pinfo)
-            print('签到成功', pinfo)
 
     def frame_come(self, frame, frame_process):
         """

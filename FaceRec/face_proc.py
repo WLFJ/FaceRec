@@ -1,5 +1,7 @@
 #!/bin/python
 
+import time
+
 import dlib  # 人脸识别的库dlib
 import numpy as np
 import threading
@@ -8,7 +10,7 @@ from .FaceInfo import FaceInfo
 
 import cv2
 
-THREADS = 3
+THREADS = 8
 NOT_FOUND = 'Unknown face!'
 
 class RecThread(threading.Thread):
@@ -21,7 +23,7 @@ class RecThread(threading.Thread):
         """
         在这里找到最小的属性
         """
-        self.result = min([ (eu_dis(self.feature, p.features), p.pinfo) for p in self.face_list ])
+        self.result = min([ (eu_dis(self.feature, p.features), p.pinfo, p) for p in self.face_list ])
 
     def get_result(self):
         try:
@@ -41,6 +43,8 @@ class FaceProc():
         self.facerec = dlib.face_recognition_model_v1("model/dlib_face_recognition_resnet_model_v1.dat")
         self.predictor = dlib.shape_predictor('model/shape_predictor_68_face_landmarks.dat')
 
+        self.choose_face = lambda l : l[0][0]
+
         self.database = database
 
 
@@ -54,6 +58,7 @@ class FaceProc():
         threads = []
         # 现在我们要将所有任务分配
         list_len = len(self.database)
+        if list_len == 0: return None
         # 现在要把最后的也分配
         thread_seg = list_len // min(THREADS, list_len)
         res_list = []
@@ -65,9 +70,24 @@ class FaceProc():
             t.join()
             res_list.append(t.get_result())
 
-        min_res = min(res_list)
-        if min_res[0] > 0.4: return NOT_FOUND
-        return min(res_list)[1]
+        # 这里需要查看所有<0.4的, 如果有多个, 则先输出一下
+        min_res = list(filter(lambda x: x < (0.4, None, None), res_list))
+        len_min_res = len(min_res)
+
+        if len_min_res == 0: return NOT_FOUND
+
+        print('可能的人脸', min_res)
+        # 这里我们要指定是谁! 从而更新人脸
+        # 我们还需要添加签到时间戳(当然是运行时, 如果发现有时间间隔很小的, 自然可以将其归为同类)
+        # 现在我们还需要过滤是否有record_timestamp属性的, 如果只有一个, 则直接选择了
+        if len_min_res == 1 or ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1 * 1000 * 1000):
+            print('自动选择', min_res[0])
+            return res_list[0][1]
+
+        if min_res[1][0] - min_res[0][0] < 0.1:
+            # 此处还需要优化
+            res = self.choose_face(min_res[:])
+            return NOT_FOUND if res == None else res;
 
     def RecFace(self, readFrame):
         '''
@@ -95,10 +115,13 @@ class FaceProc():
         goal_p = None
         for f in self.database:
             if f.pinfo == pinfo:
-                if len(f.feature_list) == 20:
+                print('数据长度', len(f.feature_list))
+                if len(f.feature_list) == 50:
                     return
                 goal_p = f
                 f.feature_list.append(feature)
+                # 同时为其添加时间戳, 作为识别依据
+                f.record_timestamp = time.time()
                 break
         else:
             self.database.append(FaceInfo(features=None, pinfo=pinfo, feature_list=[feature, ]))
