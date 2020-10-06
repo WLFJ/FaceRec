@@ -23,6 +23,8 @@ import numpy as np
 class Video():
     def __init__(self, capture):
         self.capture = capture
+        self.capture.set(3, 640)
+        self.capture.set(4, 480)
         self.currentFrame = np.array([])
 
     def captureFrame(self):
@@ -126,7 +128,7 @@ if __name__ == '__main__':
     # 打印数据
     act_id = sys.argv[1]
     # 实例化识别引擎
-    fr = FaceRec(manager(), face_database_all, '3.wlfj.fun:8000', act_id)
+    fr = FaceRec(manager(), face_database_all, '127.0.0.1:8000', act_id)
     # 回调函数, 在识别成功和识别失败时调用你绑定的函数, 注意参数个数必须相同, 例子如下:
     def callback_succ(pinfo, pname):
         print('识别成功!', pinfo, pname)
