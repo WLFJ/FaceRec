@@ -58,7 +58,6 @@ class FaceProc():
         threads = []
         # 现在我们要将所有任务分配
         list_len = len(self.database)
-        if list_len == 0: return None
         # 现在要把最后的也分配
         thread_seg = list_len // min(THREADS, list_len)
         res_list = []
@@ -71,23 +70,28 @@ class FaceProc():
             res_list.append(t.get_result())
 
         # 这里需要查看所有<0.4的, 如果有多个, 则先输出一下
-        min_res = list(filter(lambda x: x < (0.4, None, None), res_list))
+        min_res = list(sorted(filter(lambda x: x < (0.4, None, None), res_list)))
         len_min_res = len(min_res)
 
-        if len_min_res == 0: return NOT_FOUND
+        if len_min_res == 0: return (NOT_FOUND, True)
 
+        # 这里要优化展示内容
         print('可能的人脸', min_res)
         # 这里我们要指定是谁! 从而更新人脸
         # 我们还需要添加签到时间戳(当然是运行时, 如果发现有时间间隔很小的, 自然可以将其归为同类)
         # 现在我们还需要过滤是否有record_timestamp属性的, 如果只有一个, 则直接选择了
-        if ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1000):
+        if len_min_res == 1:
+            return (min_res[0][1], True)
+        elif ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1000):
             print('自动选择', min_res[0], min_res[0][2].record_timestamp)
-            return res_list[0][1]
+            return (min_res[0][1], True)
+        elif len_min_res > 1 and min_res[1][0] - min_res[0][0] > 0.1:
+            return (min_res[0][1], True)
 
         res = self.choose_face(min_res[:])
-        return NOT_FOUND if res == None else res;
+        return (NOT_FOUND, True) if res == None else (res, False);
 
-    def RecFace(self, readFrame):
+    def _RecFace(self, readFrame):
         '''
         通过视频帧返回人脸信息
         我们还需要更多信息
@@ -102,9 +106,17 @@ class FaceProc():
         返回信息格式tuple(feature, (left, right, top, bottom))
         '''
         readFrame = cv2.cvtColor(readFrame, cv2.COLOR_BGR2RGB)
-        return self.RecFace(readFrame)
+        return self._RecFace(readFrame)
 
-    def AddFeature(self, pinfo, feature):
+    def RecFace(self, readFrame):
+        '''
+        通过视频帧返回人脸信息
+        我们还需要更多信息
+        返回信息格式tuple(feature, (left, right, top, bottom))
+        '''
+        return self.RecFace_grey(readFrame)
+
+    def AddFeature(self, pinfo, feature, force_add=False):
         '''
         为指定pinfo添加面部信息
         !! 糟糕的数据结构 应该按照pinfo为主码去做
@@ -113,8 +125,7 @@ class FaceProc():
         goal_p = None
         for f in self.database:
             if f.pinfo == pinfo:
-                print('数据长度', len(f.feature_list))
-                if len(f.feature_list) == 50:
+                if len(f.feature_list) >= 50 and not force_add:
                     return
                 goal_p = f
                 f.feature_list.append(feature)

@@ -48,22 +48,25 @@ class FaceRec():
         if len(people_features) != 0:
             for feature, pos in people_features:
                 cv2.rectangle(frame, tuple([pos[0], pos[2]]), tuple([pos[1], pos[3]]), (255, 0, 0), 2)
-                pinfo = self.face_proc.FindPInfo(feature)
-                pinfo_list.append(pinfo)
+                (pinfo, is_auto) = self.face_proc.FindPInfo(feature)
+                if not pinfo: pinfo = NOT_FOUND
+                pinfo_list.append((pinfo, is_auto))
+                # 我们要在这里添加编号, 方便处理询问
                 cv2.putText(frame, pinfo, (pos[0], pos[2]), font, 1.2, (255, 255, 255), 2)
 
         frame_process(frame)
 
         if len(people_features) != 0:
             for feature, pos in people_features:
-                pinfo = pinfo_list.pop(0)
+                pinfo, isA_auto = pinfo_list.pop(0)
                 if pinfo != NOT_FOUND:
                     # threading.Thread(target=self.rec_out, args=(pinfo, self.stu_infos[pinfo])).start()
                     self.rec_out(pinfo, self.stu_infos[pinfo])
                     threading.Thread(target=self.rec_check_in, args=(pinfo,)).start()
+                    # 现在我们要能知道是不是强制添加
+                    self.face_proc.AddFeature(pinfo, feature, not is_auto)
                 else:
                     threading.Thread(target=self.rec_fail, args=(frame, )).start()
-                self.face_proc.AddFeature(pinfo, feature)
 
     def close_event(self):
         for i, s1 in enumerate(self.face_database_all):
