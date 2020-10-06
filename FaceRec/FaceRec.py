@@ -49,7 +49,6 @@ class FaceRec():
             for feature, pos in people_features:
                 cv2.rectangle(frame, tuple([pos[0], pos[2]]), tuple([pos[1], pos[3]]), (255, 0, 0), 2)
                 (pinfo, is_auto) = self.face_proc.FindPInfo(feature)
-                if not pinfo: pinfo = NOT_FOUND
                 pinfo_list.append((pinfo, is_auto))
                 # 我们要在这里添加编号, 方便处理询问
                 cv2.putText(frame, pinfo, (pos[0], pos[2]), font, 1.2, (255, 255, 255), 2)
