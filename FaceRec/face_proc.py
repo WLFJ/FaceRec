@@ -77,14 +77,13 @@ class FaceProc():
         # 以下是判断识别的逻辑
 
         # 这里要优化展示内容
-        print('可能的人脸', min_res)
         # 这里我们要指定是谁! 从而更新人脸
         # 我们还需要添加签到时间戳(当然是运行时, 如果发现有时间间隔很小的, 自然可以将其归为同类)
         # 现在我们还需要过滤是否有record_timestamp属性的, 如果只有一个, 则直接选择了
-        if len_min_res == 1 and min_res[0][0] < 0.25 and len(min_res[0][2].feature_list) != 1:
+        if len_min_res == 1 and min_res[0][0] < 0.25 and len(min_res[0][2].feature_list) < 30:
             return (min_res[0][1], True)
         elif ('record_timestamp' in dir(min_res[0][2]) and time.time() - min_res[0][2].record_timestamp < 1000):
-            print('自动选择', min_res[0], min_res[0][2].record_timestamp)
+            print('自动选择')
             return (min_res[0][1], True)
         elif len_min_res > 1 and min_res[1][0] - min_res[0][0] > 0.1:
             return (min_res[0][1], True)

@@ -18,7 +18,7 @@ class manager():
             self.stu_dic[pinfo] = time.time()
 
     def is_in(self, pinfo):
-        return pinfo in self.stu_dic.keys()
+        return pinfo in self.stu_dic
 
     def get_rec(self):
         return self.stu_dic.copy()

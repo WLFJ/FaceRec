@@ -8,6 +8,7 @@ import wx
 from pubsub import pub
 import cv2
 from threading import Thread
+from threading import Event
 import FaceDB_init as db
 import threading
 # 需要导入的包
@@ -91,7 +92,7 @@ class Interface(wx.Frame):
     def OnquestClicked(self, event):
         stu_id = self.text.GetValue()
         print("手动录入")
-        res = requests.get(f'http://3.wlfj.fun:8000/checkin/10/{stu_id}')
+        res = requests.get(f'http://3.wlfj.fun:8000/checkin/{check_in_act}/{stu_id}')
         if res.text != '{"msg": "OK."}':
             self.infoText.AppendText(f'学号{stu_id}手动签到失败!\n')
             print('签到失败', res.text)
@@ -100,11 +101,18 @@ class Interface(wx.Frame):
             self.infoText.AppendText(f'学号{stu_id}手动签到成功!\n')
             print('签到成功', stu_id)
         pass
+    
+    def choose_faces_gui(self, choose_list):
+        # 这里需要显示窗口
+        msg = '可能的学号' + ' '.join(i[1] for i in choose_list)
+        self.choose_face = wx.GetTextFromUser(message=msg + "请输入您的学号",default_value="", parent=None)
+        self.event.set()
 
     def choose_faces(self, l):
-        print('来自face_choose', l)
-        i = input('你是谁? -1代表都不匹配')
-        return NOT_FOUND if i == '-1' else i
+        wx.CallAfter(self.choose_faces_gui, l)
+        self.event.wait()
+        self.event.clear()
+        return NOT_FOUND if self.choose_face == '' else self.choose_face
 
     def call_back(self, pic):
         self.bmp.SetBitmap(pic)
@@ -155,9 +163,9 @@ class Interface(wx.Frame):
         self.start_quest.SetFont(menu_Font)
         questMenu.Append(self.start_quest)
 
-        menuBar.Append(initMenu, "&初始化")
-        menuBar.Append(puncardMenu, "&刷脸签到")
-        menuBar.Append(questMenu, "&手动签到")
+        menuBar.Append(initMenu, "初始化")
+        menuBar.Append(puncardMenu, "刷脸签到")
+        menuBar.Append(questMenu, "手动签到")
         self.SetMenuBar(menuBar)
 
         self.Bind(wx.EVT_MENU, self.OnStartPunchCardClicked, id=ID_START_PUNCHCARD)
@@ -200,6 +208,7 @@ class Interface(wx.Frame):
         pub.subscribe(self.succ_update_label_event, "updateLabel")
         self.Bind(wx.EVT_CLOSE, self.OnFormClosed, self)
         fr.face_proc.choose_face = self.choose_faces
+        self.event = Event()
 
 
 if __name__ == '__main__':
@@ -207,7 +216,8 @@ if __name__ == '__main__':
     with open('facedb.db', 'rb') as f:
         face_database_all = pickle.loads(f.read())
     manager = manager()
-    fr = FaceRec(manager, face_database_all, '3.wlfj.fun:8000', 10)
+    check_in_act = sys.argv[1]
+    fr = FaceRec(manager, face_database_all, '3.wlfj.fun:8000', check_in_act)
     app = wx.App()
     frame = Interface()
     frame.Show()
